@@ -22,7 +22,7 @@
   --muted:#7894a9;
 }
 
-html, body {
+html,body {
   width:100%;
   height:100%;
   margin:0;
@@ -124,9 +124,7 @@ h1 {
   flex-direction:column;
 }
 
-#chatPanel.hidden {
-  display:none;
-}
+#chatPanel.hidden { display:none; }
 
 #messages {
   flex:1;
@@ -142,14 +140,8 @@ h1 {
   scrollbar-color:#1b6685 transparent;
 }
 
-#messages::-webkit-scrollbar {
-  width:7px;
-}
-
-#messages::-webkit-scrollbar-track {
-  background:transparent;
-}
-
+#messages::-webkit-scrollbar { width:7px; }
+#messages::-webkit-scrollbar-track { background:transparent; }
 #messages::-webkit-scrollbar-thumb {
   background:#1b6685;
   border-radius:10px;
@@ -226,11 +218,31 @@ button:disabled {
 
 .access button { width:100%; padding:14px; }
 
-.hidden { display:none; }
+.hidden { display:none !important; }
 
 #chatStatus {
   flex:0 0 auto;
   margin-bottom:0;
+}
+
+.notification-area {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+#notificationButton {
+  padding:11px 16px;
+  font-size:11px;
+  letter-spacing:1px;
+}
+
+#notificationStatus {
+  margin:0;
+  font-size:11px;
 }
 
 footer {
@@ -242,51 +254,22 @@ footer {
 }
 
 @media(max-width:600px) {
-  html, body {
+  html,body {
     height:100%;
     height:100dvh;
   }
 
-  header {
-    padding:16px 20px;
-  }
+  header { padding:16px 20px; }
+  main { padding:15px 12px; }
+  .hero { margin-bottom:15px; }
+  .orb { width:65px; height:65px; }
 
-  main {
-    padding:15px 12px;
-  }
-
-  .hero {
-    margin-bottom:15px;
-  }
-
-  .orb {
-    width:65px;
-    height:65px;
-  }
-
-  #chatPanel {
-    padding:15px;
-  }
-
-  .message {
-    max-width:92%;
-  }
-
-  .input-area {
-    gap:7px;
-  }
-
-  input {
-    padding:13px;
-  }
-
-  button {
-    padding:0 15px;
-  }
-
-  footer {
-    padding:9px;
-  }
+  #chatPanel { padding:15px; }
+  .message { max-width:92%; }
+  .input-area { gap:7px; }
+  input { padding:13px; }
+  button { padding:0 15px; }
+  footer { padding:9px; }
 }
 </style>
 </head>
@@ -317,6 +300,13 @@ footer {
   <section id="chatPanel" class="panel hidden">
     <div class="panel-title">SECURE AI COMMUNICATION</div>
 
+    <div class="notification-area">
+      <button id="notificationButton">ENABLE NOTIFICATIONS</button>
+      <p id="notificationStatus" class="subtitle">
+        PHONE NOTIFICATIONS NOT ENABLED
+      </p>
+    </div>
+
     <div id="messages">
       <div class="message sentinel">
         SENTINEL online. Cloud AI connection ready. How may I assist?
@@ -334,14 +324,31 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.1.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.2.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 
 <script>
 const API_URL =
   "https://sentinel-connection.logancoburn07.workers.dev/";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyAK-UHKbYrhiprRLQyV7sTMgDPUn6NfFC8",
+  authDomain: "sentinel-61705.firebaseapp.com",
+  projectId: "sentinel-61705",
+  storageBucket: "sentinel-61705.firebasestorage.app",
+  messagingSenderId: "398524596354",
+  appId: "1:398524596354:web:04e6e4ec2d7b23c632749b"
+};
+
+const VAPID_KEY =
+  "BE4dV1np_7vVy8yfMOr5g4izItEkqeGrQR3NjPdFzYnsndT6jXFC9BAw9JtcFpHKOGU4Tj-Qq-hdK58WO2BVNpQ";
+
 let accessCode = "";
+let messaging = null;
+let firebaseReady = false;
 
 const accessPanel = document.getElementById("accessPanel");
 const chatPanel = document.getElementById("chatPanel");
@@ -350,6 +357,16 @@ const chatStatus = document.getElementById("chatStatus");
 const messageInput = document.getElementById("messageInput");
 const messages = document.getElementById("messages");
 const sendButton = document.getElementById("sendButton");
+const notificationButton = document.getElementById("notificationButton");
+const notificationStatus = document.getElementById("notificationStatus");
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  messaging = firebase.messaging();
+  firebaseReady = true;
+} catch (error) {
+  console.error("Firebase initialisation failed:", error);
+}
 
 function addMessage(content, type) {
   const element = document.createElement("div");
@@ -448,10 +465,62 @@ async function sendMessage() {
   messageInput.focus();
 }
 
+async function enableNotifications() {
+  if (!firebaseReady) {
+    notificationStatus.textContent = "FIREBASE COULD NOT INITIALISE";
+    return;
+  }
+
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    notificationStatus.textContent = "NOTIFICATIONS NOT SUPPORTED";
+    return;
+  }
+
+  notificationButton.disabled = true;
+  notificationStatus.textContent = "SETTING UP NOTIFICATIONS...";
+
+  try {
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      throw new Error("Notification permission was not granted.");
+    }
+
+    const registration = await navigator.serviceWorker.register(
+      "./firebase-messaging-sw.js"
+    );
+
+    await navigator.serviceWorker.ready;
+
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      throw new Error("Firebase did not return a device token.");
+    }
+
+    localStorage.setItem("sentinelFcmToken", token);
+
+    notificationStatus.textContent =
+      "DEVICE TOKEN CREATED — SERVER CONNECTION NEXT";
+
+    notificationButton.textContent = "NOTIFICATIONS ENABLED";
+
+  } catch (error) {
+    console.error("Notification setup error:", error);
+    notificationStatus.textContent = error.message;
+    notificationButton.disabled = false;
+  }
+}
+
 document.getElementById("connectButton")
   .addEventListener("click", connect);
 
 sendButton.addEventListener("click", sendMessage);
+
+notificationButton.addEventListener("click", enableNotifications);
 
 document.getElementById("accessCode")
   .addEventListener("keydown", event => {
@@ -471,7 +540,7 @@ if (savedCode) {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js")
+    navigator.serviceWorker.register("./sw.js")
       .catch(error => console.log("Offline support unavailable:", error));
   });
 }
