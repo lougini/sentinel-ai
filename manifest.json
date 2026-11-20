@@ -1,0 +1,21 @@
+
+{
+  "id": "/sentinel-ai/",
+  "name": "SENTINEL - Personal Intelligence",
+  "short_name": "SENTINEL",
+  "description": "Personal Intelligence Assistant",
+  "start_url": "/sentinel-ai/",
+  "scope": "/sentinel-ai/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#061321",
+  "theme_color": "#071522",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
