@@ -11,13 +11,10 @@
 <title>SENTINEL</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 :root {
   --bg: #061321;
-  --panel: #0b1e30;
   --border: #17364c;
   --cyan: #38d9ff;
   --text: #e8f5ff;
@@ -66,46 +63,9 @@ main {
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
-  padding: 10px 24px;
+  padding: 14px 24px;
   display: flex;
   flex-direction: column;
-}
-
-.hero {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 13px;
-  margin-bottom: 10px;
-}
-
-.orb {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #b5f7ff, #38d9ff 25%, #0875a7 55%, #061321 78%);
-  box-shadow: 0 0 25px #24caff88, 0 0 55px #1689c544;
-  animation: pulse 4s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  50% {
-    box-shadow: 0 0 40px #24caffaa, 0 0 75px #1689c566;
-  }
-}
-
-h1 {
-  font-size: 19px;
-  letter-spacing: 5px;
-  margin: 0;
-}
-
-.subtitle {
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 5px;
 }
 
 .panel {
@@ -256,6 +216,12 @@ button:disabled {
   padding-top: 5px;
 }
 
+.subtitle {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
 .notification-area {
   flex: 0 0 auto;
   display: flex;
@@ -295,20 +261,7 @@ footer {
   }
 
   main {
-    padding: 8px 9px;
-  }
-
-  .hero {
-    margin-bottom: 8px;
-  }
-
-  .orb {
-    width: 32px;
-    height: 32px;
-  }
-
-  h1 {
-    font-size: 17px;
+    padding: 9px;
   }
 
   #chatPanel {
@@ -353,14 +306,6 @@ footer {
 </header>
 
 <main>
-
-  <section class="hero">
-    <div class="orb"></div>
-    <div>
-      <h1>SENTINEL</h1>
-      <div class="subtitle">PERSONAL INTELLIGENCE SYSTEM</div>
-    </div>
-  </section>
 
   <section id="accessPanel" class="panel access">
     <div class="panel-title">AUTHENTICATION REQUIRED</div>
