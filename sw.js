@@ -8,7 +8,7 @@ importScripts(
 );
 
 
-// SENTINEL FIREBASE
+// FIREBASE INITIALISATION
 
 firebase.initializeApp({
   apiKey: "AIzaSyAK-UHKbYrhiprRLQyV7sTMgDPUn6NfFC8",
@@ -20,6 +20,9 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+
+
+// BACKGROUND NOTIFICATIONS
 
 messaging.onBackgroundMessage(payload => {
   const title =
