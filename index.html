@@ -320,6 +320,15 @@ footer {
   letter-spacing: 1px;
 }
 
+#textToggleButton {
+  padding: 10px 15px;
+  background: #17364c;
+  color: #dff7ff;
+  border: 1px solid #28617b;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
 #voiceStatus {
   margin: 0;
   font-size: 10px;
@@ -338,7 +347,7 @@ footer {
     gap: 7px;
   }
 
-  #voiceButton, #interruptButton {
+  #voiceButton, #interruptButton, #textToggleButton {
     padding: 10px 12px;
   }
 }
@@ -376,6 +385,7 @@ footer {
     <div class="voice-controls">
       <button id="voiceButton">START VOICE MODE</button>
       <button id="interruptButton" disabled>INTERRUPT</button>
+      <button id="textToggleButton" type="button">OPEN TEXT INPUT</button>
       <p id="voiceStatus" class="subtitle">VOICE MODE OFF</p>
     </div>
 
@@ -385,7 +395,7 @@ footer {
       </div>
     </div>
 
-    <div class="input-area">
+    <div id="inputArea" class="input-area hidden">
       <input id="messageInput" type="text" placeholder="Message SENTINEL..." autocomplete="off">
       <button id="sendButton">SEND</button>
     </div>
@@ -435,6 +445,8 @@ const notificationStatus = document.getElementById("notificationStatus");
 const voiceButton = document.getElementById("voiceButton");
 const interruptButton = document.getElementById("interruptButton");
 const voiceStatus = document.getElementById("voiceStatus");
+const textToggleButton = document.getElementById("textToggleButton");
+const inputArea = document.getElementById("inputArea");
 
 let voiceMode = false;
 let recognition = null;
@@ -508,7 +520,6 @@ async function connect() {
     chatPanel.classList.remove("hidden");
 
     addMessage(data.reply, "sentinel");
-    messageInput.focus();
 
     await loadLatestBriefing();
 
@@ -779,7 +790,6 @@ async function sendMessage() {
   }
 
   sendButton.disabled = false;
-  messageInput.focus();
 }
 
 async function loadLatestBriefing() {
@@ -879,6 +889,21 @@ document.getElementById("connectButton")
   .addEventListener("click", connect);
 
 sendButton.addEventListener("click", sendMessage);
+
+textToggleButton.addEventListener("click", () => {
+  const isHidden = inputArea.classList.contains("hidden");
+
+  if (isHidden) {
+    inputArea.classList.remove("hidden");
+    textToggleButton.textContent = "CLOSE TEXT INPUT";
+    // Focus is deliberately performed only after this manual button press.
+    messageInput.focus();
+  } else {
+    inputArea.classList.add("hidden");
+    textToggleButton.textContent = "OPEN TEXT INPUT";
+    messageInput.blur();
+  }
+});
 
 notificationButton.addEventListener("click", enableNotifications);
 
