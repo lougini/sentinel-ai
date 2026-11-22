@@ -324,7 +324,7 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.2.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.3.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -349,6 +349,7 @@ const VAPID_KEY =
 let accessCode = "";
 let messaging = null;
 let firebaseReady = false;
+let serviceWorkerRegistration = null;
 
 const accessPanel = document.getElementById("accessPanel");
 const chatPanel = document.getElementById("chatPanel");
@@ -364,6 +365,13 @@ try {
   firebase.initializeApp(firebaseConfig);
   messaging = firebase.messaging();
   firebaseReady = true;
+
+  messaging.onMessage(payload => {
+    const title = payload.notification?.title || "SENTINEL";
+    const body = payload.notification?.body || "You have a new update.";
+
+    addMessage("NOTIFICATION\n" + title + "\n" + body, "sentinel");
+  });
 } catch (error) {
   console.error("Firebase initialisation failed:", error);
 }
@@ -376,6 +384,22 @@ function addMessage(content, type) {
   messages.scrollTop = messages.scrollHeight;
 }
 
+async function apiRequest(payload) {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || "The server request failed.");
+  }
+
+  return data;
+}
+
 async function connect() {
   const code = document.getElementById("accessCode").value.trim();
 
@@ -384,24 +408,16 @@ async function connect() {
     return;
   }
 
+  const connectButton = document.getElementById("connectButton");
+  connectButton.disabled = true;
   accessStatus.textContent = "Checking connection...";
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "chat",
-        accessCode: code,
-        message: "Reply with exactly: SENTINEL connection verified."
-      })
+    const data = await apiRequest({
+      action: "chat",
+      accessCode: code,
+      message: "Reply with exactly: SENTINEL connection verified."
     });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || "Connection failed.");
-    }
 
     accessCode = code;
     sessionStorage.setItem("sentinelAccessCode", code);
@@ -412,8 +428,19 @@ async function connect() {
     addMessage(data.reply, "sentinel");
     messageInput.focus();
 
+    await loadLatestBriefing();
+
+    const savedToken = localStorage.getItem("sentinelFcmToken");
+
+    if (savedToken) {
+      notificationStatus.textContent = "DEVICE TOKEN SAVED ON THIS DEVICE";
+      notificationButton.textContent = "NOTIFICATIONS SET UP";
+    }
+
   } catch (error) {
     accessStatus.textContent = error.message;
+  } finally {
+    connectButton.disabled = false;
   }
 }
 
@@ -435,22 +462,13 @@ async function sendMessage() {
   messages.scrollTop = messages.scrollHeight;
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "chat",
-        accessCode: accessCode,
-        message: message
-      })
+    const data = await apiRequest({
+      action: "chat",
+      accessCode: accessCode,
+      message: message
     });
 
-    const data = await response.json();
     loading.remove();
-
-    if (!data.success) {
-      throw new Error(data.error || "AI request failed.");
-    }
 
     addMessage(data.reply, "sentinel");
     chatStatus.textContent = "CONNECTED TO CLOUD AI";
@@ -465,7 +483,43 @@ async function sendMessage() {
   messageInput.focus();
 }
 
+async function loadLatestBriefing() {
+  if (!accessCode) return;
+
+  try {
+    const data = await apiRequest({
+      action: "get_latest_briefing",
+      accessCode: accessCode
+    });
+
+    const briefing =
+      data.briefing ||
+      data.summary ||
+      data.latestBriefing ||
+      "";
+
+    const briefingDate = data.date || "";
+
+    if (briefing) {
+      addMessage(
+        "LATEST EMAIL BRIEFING" +
+        (briefingDate ? "\n" + briefingDate : "") +
+        "\n\n" + briefing,
+        "sentinel"
+      );
+    }
+
+  } catch (error) {
+    console.warn("Could not retrieve the latest briefing:", error);
+  }
+}
+
 async function enableNotifications() {
+  if (!accessCode) {
+    notificationStatus.textContent = "CONNECT TO SENTINEL FIRST";
+    return;
+  }
+
   if (!firebaseReady) {
     notificationStatus.textContent = "FIREBASE COULD NOT INITIALISE";
     return;
@@ -486,26 +540,32 @@ async function enableNotifications() {
       throw new Error("Notification permission was not granted.");
     }
 
-    const registration = await navigator.serviceWorker.register(
-      "./firebase-messaging-sw.js"
-    );
+    serviceWorkerRegistration = await navigator.serviceWorker.register("./sw.js");
 
     await navigator.serviceWorker.ready;
 
     const token = await messaging.getToken({
       vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registration
+      serviceWorkerRegistration: serviceWorkerRegistration
     });
 
     if (!token) {
       throw new Error("Firebase did not return a device token.");
     }
 
+    const result = await apiRequest({
+      action: "register_device",
+      accessCode: accessCode,
+      token: token
+    });
+
+    if (result.success === false) {
+      throw new Error(result.error || "The server could not save the device.");
+    }
+
     localStorage.setItem("sentinelFcmToken", token);
 
-    notificationStatus.textContent =
-      "DEVICE TOKEN CREATED — SERVER CONNECTION NEXT";
-
+    notificationStatus.textContent = "DEVICE REGISTERED — NOTIFICATIONS READY";
     notificationButton.textContent = "NOTIFICATIONS ENABLED";
 
   } catch (error) {
@@ -539,9 +599,13 @@ if (savedCode) {
 }
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .catch(error => console.log("Offline support unavailable:", error));
+  window.addEventListener("load", async () => {
+    try {
+      serviceWorkerRegistration =
+        await navigator.serviceWorker.register("./sw.js");
+    } catch (error) {
+      console.log("Offline support unavailable:", error);
+    }
   });
 }
 </script>
