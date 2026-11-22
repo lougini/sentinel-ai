@@ -396,7 +396,7 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.3.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.4.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -440,6 +440,7 @@ let voiceMode = false;
 let recognition = null;
 let recognitionActive = false;
 let isSpeaking = false;
+let isProcessing = false;
 let recognitionRestartTimer = null;
 
 try {
@@ -566,7 +567,8 @@ function createSpeechRecognition() {
 
     transcript = transcript.trim();
 
-    if (transcript && voiceMode && !isSpeaking) {
+    if (transcript && voiceMode && !isSpeaking && !isProcessing) {
+      isProcessing = true;
       stopRecognition();
       messageInput.value = transcript;
       sendMessage();
@@ -593,7 +595,7 @@ function createSpeechRecognition() {
   recognition.onend = () => {
     recognitionActive = false;
 
-    if (voiceMode && !isSpeaking) {
+    if (voiceMode && !isSpeaking && !isProcessing) {
       clearTimeout(recognitionRestartTimer);
       recognitionRestartTimer = setTimeout(() => {
         startRecognition();
@@ -603,7 +605,7 @@ function createSpeechRecognition() {
 }
 
 function startRecognition() {
-  if (!voiceMode || isSpeaking || !recognition || recognitionActive) return;
+  if (!voiceMode || isSpeaking || isProcessing || !recognition || recognitionActive) return;
 
   try {
     recognition.start();
@@ -654,6 +656,7 @@ function startVoiceMode() {
 function stopVoiceMode() {
   voiceMode = false;
   isSpeaking = false;
+  isProcessing = false;
   stopRecognition();
 
   if ("speechSynthesis" in window) {
@@ -674,6 +677,7 @@ function speakResponse(text) {
     }
 
     isSpeaking = true;
+    isProcessing = true;
     stopRecognition();
     window.speechSynthesis.cancel();
 
@@ -699,6 +703,7 @@ function speakResponse(text) {
 
     const finishSpeaking = () => {
       isSpeaking = false;
+      isProcessing = false;
       interruptButton.disabled = true;
       resolve();
 
@@ -720,6 +725,7 @@ function interruptSpeech() {
 
   window.speechSynthesis.cancel();
   isSpeaking = false;
+  isProcessing = false;
   interruptButton.disabled = true;
   setVoiceStatus("INTERRUPTED — LISTENING", "listening");
   startRecognition();
@@ -729,6 +735,8 @@ async function sendMessage() {
   const message = messageInput.value.trim();
 
   if (!message || !accessCode || sendButton.disabled) return;
+
+  if (voiceMode) isProcessing = true;
 
   addMessage(message, "user");
   messageInput.value = "";
@@ -764,6 +772,7 @@ async function sendMessage() {
     chatStatus.textContent = "CONNECTION ERROR";
 
     if (voiceMode) {
+      isProcessing = false;
       setVoiceStatus("LISTENING AGAIN...", "listening");
       startRecognition();
     }
