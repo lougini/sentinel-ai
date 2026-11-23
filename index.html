@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -351,7 +352,6 @@ footer {
     padding: 10px 12px;
   }
 }
-
 </style>
 </head>
 
@@ -406,7 +406,7 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.4.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.6.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -537,7 +537,6 @@ async function connect() {
   }
 }
 
-
 function setVoiceStatus(message, state = "") {
   voiceStatus.textContent = message;
   voiceStatus.classList.remove("listening", "speaking");
@@ -579,10 +578,11 @@ function createSpeechRecognition() {
     transcript = transcript.trim();
 
     if (transcript && voiceMode && !isSpeaking && !isProcessing) {
-      isProcessing = true;
       stopRecognition();
       messageInput.value = transcript;
-      sendMessage();
+
+      // Mark this message as voice input so SENTINEL can speak its reply.
+      sendMessage("voice");
     }
   };
 
@@ -621,7 +621,6 @@ function startRecognition() {
   try {
     recognition.start();
   } catch (error) {
-    // The browser can briefly report that recognition is already starting.
     console.warn("Could not start recognition yet:", error.message);
   }
 }
@@ -742,12 +741,22 @@ function interruptSpeech() {
   startRecognition();
 }
 
-async function sendMessage() {
+/*
+  MESSAGE SOURCE:
+  "keyboard" = display response only
+  "voice" = display response and speak it
+
+  This keeps keyboard messages silent even when voice mode is active.
+*/
+async function sendMessage(source = "keyboard") {
   const message = messageInput.value.trim();
 
   if (!message || !accessCode || sendButton.disabled) return;
 
-  if (voiceMode) isProcessing = true;
+  if (voiceMode) {
+    isProcessing = true;
+    stopRecognition();
+  }
 
   addMessage(message, "user");
   messageInput.value = "";
@@ -773,8 +782,14 @@ async function sendMessage() {
     addMessage(data.reply, "sentinel");
     chatStatus.textContent = "CONNECTED TO CLOUD AI";
 
-    if (voiceMode) {
+    // Only actual voice-recognised messages receive spoken replies.
+    if (source === "voice" && voiceMode) {
       await speakResponse(data.reply);
+    } else if (voiceMode) {
+      // Keyboard reply stays silent. Resume listening afterwards.
+      isProcessing = false;
+      setVoiceStatus("LISTENING AGAIN...", "listening");
+      startRecognition();
     }
 
   } catch (error) {
@@ -787,9 +802,10 @@ async function sendMessage() {
       setVoiceStatus("LISTENING AGAIN...", "listening");
       startRecognition();
     }
-  }
 
-  sendButton.disabled = false;
+  } finally {
+    sendButton.disabled = false;
+  }
 }
 
 async function loadLatestBriefing() {
@@ -888,7 +904,8 @@ async function enableNotifications() {
 document.getElementById("connectButton")
   .addEventListener("click", connect);
 
-sendButton.addEventListener("click", sendMessage);
+// Keyboard sends are explicitly marked as keyboard messages.
+sendButton.addEventListener("click", () => sendMessage("keyboard"));
 
 textToggleButton.addEventListener("click", () => {
   const isHidden = inputArea.classList.contains("hidden");
@@ -896,7 +913,8 @@ textToggleButton.addEventListener("click", () => {
   if (isHidden) {
     inputArea.classList.remove("hidden");
     textToggleButton.textContent = "CLOSE TEXT INPUT";
-    // Focus is deliberately performed only after this manual button press.
+
+    // Focus only happens after the user manually opens text input.
     messageInput.focus();
   } else {
     inputArea.classList.add("hidden");
@@ -922,8 +940,12 @@ document.getElementById("accessCode")
     if (event.key === "Enter") connect();
   });
 
+// Pressing Enter also sends a keyboard message, never a spoken one.
 messageInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") sendMessage();
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage("keyboard");
+  }
 });
 
 const savedCode = sessionStorage.getItem("sentinelAccessCode");
