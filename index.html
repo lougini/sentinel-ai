@@ -92,9 +92,7 @@ main {
   padding: 15px 22px;
 }
 
-#chatPanel.hidden {
-  display: none;
-}
+#chatPanel.hidden { display: none; }
 
 #messages {
   flex: 1;
@@ -110,14 +108,8 @@ main {
   scrollbar-color: #1b6685 transparent;
 }
 
-#messages::-webkit-scrollbar {
-  width: 7px;
-}
-
-#messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+#messages::-webkit-scrollbar { width: 7px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
 #messages::-webkit-scrollbar-thumb {
   background: #1b6685;
   border-radius: 10px;
@@ -171,9 +163,7 @@ input {
   font-size: 14px;
 }
 
-input:focus {
-  border-color: var(--cyan);
-}
+input:focus { border-color: var(--cyan); }
 
 button {
   padding: 0 25px;
@@ -206,9 +196,7 @@ button:disabled {
   padding: 14px;
 }
 
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 #chatStatus {
   flex: 0 0 auto;
@@ -242,60 +230,6 @@ button:disabled {
   font-size: 10px;
 }
 
-footer {
-  flex: 0 0 auto;
-  text-align: center;
-  color: #55748b;
-  font-size: 10px;
-  padding: 7px;
-}
-
-@media(max-width: 600px) {
-  html, body {
-    height: 100%;
-    height: 100dvh;
-  }
-
-  header {
-    padding: 12px 17px;
-  }
-
-  main {
-    padding: 9px;
-  }
-
-  #chatPanel {
-    padding: 12px;
-  }
-
-  #messages {
-    padding: 10px 2px;
-    gap: 13px;
-  }
-
-  .message {
-    max-width: 96%;
-    padding: 12px 14px;
-    font-size: 14px;
-  }
-
-  .input-area {
-    gap: 7px;
-  }
-
-  input {
-    padding: 13px;
-  }
-
-  button {
-    padding: 0 15px;
-  }
-
-  footer {
-    padding: 6px;
-  }
-}
-
 .voice-controls {
   flex: 0 0 auto;
   display: flex;
@@ -312,15 +246,7 @@ footer {
   letter-spacing: 1px;
 }
 
-#interruptButton {
-  padding: 10px 15px;
-  background: #17364c;
-  color: #dff7ff;
-  border: 1px solid #28617b;
-  font-size: 10px;
-  letter-spacing: 1px;
-}
-
+#interruptButton,
 #textToggleButton {
   padding: 10px 15px;
   background: #17364c;
@@ -335,20 +261,48 @@ footer {
   font-size: 10px;
 }
 
-#voiceStatus.listening {
-  color: #58e6a5;
-}
+#voiceStatus.listening { color: #58e6a5; }
+#voiceStatus.speaking { color: #38d9ff; }
 
-#voiceStatus.speaking {
-  color: #38d9ff;
+footer {
+  flex: 0 0 auto;
+  text-align: center;
+  color: #55748b;
+  font-size: 10px;
+  padding: 7px;
 }
 
 @media(max-width: 600px) {
-  .voice-controls {
-    gap: 7px;
+  html, body {
+    height: 100%;
+    height: 100dvh;
   }
 
-  #voiceButton, #interruptButton, #textToggleButton {
+  header { padding: 12px 17px; }
+  main { padding: 9px; }
+  #chatPanel { padding: 12px; }
+
+  #messages {
+    padding: 10px 2px;
+    gap: 13px;
+  }
+
+  .message {
+    max-width: 96%;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .input-area { gap: 7px; }
+  input { padding: 13px; }
+  button { padding: 0 15px; }
+  footer { padding: 6px; }
+
+  .voice-controls { gap: 7px; }
+
+  #voiceButton,
+  #interruptButton,
+  #textToggleButton {
     padding: 10px 12px;
   }
 }
@@ -367,7 +321,8 @@ footer {
   <section id="accessPanel" class="panel access">
     <div class="panel-title">AUTHENTICATION REQUIRED</div>
     <p>Enter your private SENTINEL access code.</p>
-    <input id="accessCode" type="password" placeholder="Access code" autocomplete="off">
+    <input id="accessCode" type="password"
+      placeholder="Access code" autocomplete="off">
     <button id="connectButton">CONNECT</button>
     <p id="accessStatus" class="subtitle"></p>
   </section>
@@ -396,7 +351,8 @@ footer {
     </div>
 
     <div id="inputArea" class="input-area hidden">
-      <input id="messageInput" type="text" placeholder="Message SENTINEL..." autocomplete="off">
+      <input id="messageInput" type="text"
+        placeholder="Message SENTINEL..." autocomplete="off">
       <button id="sendButton">SEND</button>
     </div>
 
@@ -406,13 +362,19 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.6.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.8.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 
 <script>
+"use strict";
+
+// ============================================
+// CONFIGURATION
+// ============================================
+
 const API_URL =
   "https://sentinel-connection.logancoburn07.workers.dev/";
 
@@ -428,32 +390,51 @@ const firebaseConfig = {
 const VAPID_KEY =
   "BE4dV1np_7vVy8yfMOr5g4izItEkqeGrQR3NjPdFzYnsndT6jXFC9BAw9JtcFpHKOGU4Tj-Qq-hdK58WO2BVNpQ";
 
+
+// ============================================
+// APPLICATION STATE
+// ============================================
+
 let accessCode = "";
 let messaging = null;
 let firebaseReady = false;
 let serviceWorkerRegistration = null;
 
+let voiceMode = false;
+let recognition = null;
+let recognitionActive = false;
+let recognitionRestartTimer = null;
+
+let isSpeaking = false;
+let isProcessing = false;
+let currentUtterance = null;
+let speechSequence = 0;
+let availableVoices = [];
+let selectedVoice = null;
+
 const accessPanel = document.getElementById("accessPanel");
 const chatPanel = document.getElementById("chatPanel");
 const accessStatus = document.getElementById("accessStatus");
 const chatStatus = document.getElementById("chatStatus");
+
 const messageInput = document.getElementById("messageInput");
 const messages = document.getElementById("messages");
 const sendButton = document.getElementById("sendButton");
+
 const notificationButton = document.getElementById("notificationButton");
 const notificationStatus = document.getElementById("notificationStatus");
+
 const voiceButton = document.getElementById("voiceButton");
 const interruptButton = document.getElementById("interruptButton");
 const voiceStatus = document.getElementById("voiceStatus");
+
 const textToggleButton = document.getElementById("textToggleButton");
 const inputArea = document.getElementById("inputArea");
 
-let voiceMode = false;
-let recognition = null;
-let recognitionActive = false;
-let isSpeaking = false;
-let isProcessing = false;
-let recognitionRestartTimer = null;
+
+// ============================================
+// FIREBASE
+// ============================================
 
 try {
   firebase.initializeApp(firebaseConfig);
@@ -466,14 +447,21 @@ try {
 
     addMessage("NOTIFICATION\n" + title + "\n" + body, "sentinel");
   });
+
 } catch (error) {
   console.error("Firebase initialisation failed:", error);
 }
+
+
+// ============================================
+// GENERAL UTILITIES
+// ============================================
 
 function addMessage(content, type) {
   const element = document.createElement("div");
   element.className = "message " + type;
   element.textContent = content;
+
   messages.appendChild(element);
   messages.scrollTop = messages.scrollHeight;
 }
@@ -493,6 +481,11 @@ async function apiRequest(payload) {
 
   return data;
 }
+
+
+// ============================================
+// CONNECTION
+// ============================================
 
 async function connect() {
   const code = document.getElementById("accessCode").value.trim();
@@ -532,20 +525,143 @@ async function connect() {
 
   } catch (error) {
     accessStatus.textContent = error.message;
+
   } finally {
     connectButton.disabled = false;
   }
 }
 
+
+// ============================================
+// VOICE SELECTION
+// ============================================
+
+/*
+  Browser voice metadata is inconsistent.
+  Most browsers do not expose a reliable gender field.
+
+  This selector:
+  1. Prefers Australian English.
+  2. Prefers voices whose names suggest a masculine voice.
+  3. Falls back to other English voices.
+  4. Finally uses the browser's default voice.
+*/
+
+function scoreVoice(voice) {
+  const name = String(voice.name || "").toLowerCase();
+  const lang = String(voice.lang || "").toLowerCase();
+
+  let score = 0;
+
+  if (lang === "en-au") score += 100;
+  else if (lang.startsWith("en-au")) score += 90;
+  else if (lang === "en-gb") score += 65;
+  else if (lang.startsWith("en-gb")) score += 60;
+  else if (lang === "en-us") score += 50;
+  else if (lang.startsWith("en")) score += 35;
+  else score -= 100;
+
+  const masculineClues = [
+    "male",
+    "daniel",
+    "oliver",
+    "arthur",
+    "george",
+    "james",
+    "thomas",
+    "david",
+    "alex",
+    "ryan",
+    "guy"
+  ];
+
+  const feminineClues = [
+    "female",
+    "samantha",
+    "victoria",
+    "karen",
+    "moira",
+    "tessa",
+    "serena",
+    "zira"
+  ];
+
+  if (masculineClues.some(word => name.includes(word))) {
+    score += 25;
+  }
+
+  if (feminineClues.some(word => name.includes(word))) {
+    score -= 35;
+  }
+
+  if (voice.default) score += 3;
+
+  return score;
+}
+
+function refreshVoices() {
+  if (!("speechSynthesis" in window)) return;
+
+  availableVoices = window.speechSynthesis.getVoices();
+
+  if (!availableVoices.length) {
+    selectedVoice = null;
+    return;
+  }
+
+  const englishVoices = availableVoices.filter(voice =>
+    String(voice.lang || "").toLowerCase().startsWith("en")
+  );
+
+  if (!englishVoices.length) {
+    selectedVoice = null;
+    return;
+  }
+
+  englishVoices.sort((a, b) => scoreVoice(b) - scoreVoice(a));
+
+  selectedVoice = englishVoices[0];
+
+  console.log(
+    "SENTINEL selected voice:",
+    selectedVoice.name,
+    selectedVoice.lang
+  );
+}
+
+if ("speechSynthesis" in window) {
+  refreshVoices();
+
+  window.speechSynthesis.addEventListener(
+    "voiceschanged",
+    refreshVoices
+  );
+}
+
+
+// ============================================
+// VOICE STATUS
+// ============================================
+
 function setVoiceStatus(message, state = "") {
   voiceStatus.textContent = message;
+
   voiceStatus.classList.remove("listening", "speaking");
-  if (state) voiceStatus.classList.add(state);
+
+  if (state) {
+    voiceStatus.classList.add(state);
+  }
 }
+
+
+// ============================================
+// SPEECH RECOGNITION
+// ============================================
 
 function createSpeechRecognition() {
   const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
     throw new Error(
@@ -554,6 +670,7 @@ function createSpeechRecognition() {
   }
 
   recognition = new SpeechRecognition();
+
   recognition.lang = "en-AU";
   recognition.continuous = true;
   recognition.interimResults = false;
@@ -561,15 +678,23 @@ function createSpeechRecognition() {
 
   recognition.onstart = () => {
     recognitionActive = true;
-    if (voiceMode && !isSpeaking) {
-      setVoiceStatus("LISTENING — SPEAK NATURALLY", "listening");
+
+    if (voiceMode && !isSpeaking && !isProcessing) {
+      setVoiceStatus(
+        "LISTENING — SPEAK NATURALLY",
+        "listening"
+      );
     }
   };
 
   recognition.onresult = event => {
     let transcript = "";
 
-    for (let i = event.resultIndex; i < event.results.length; i++) {
+    for (
+      let i = event.resultIndex;
+      i < event.results.length;
+      i++
+    ) {
       if (event.results[i].isFinal) {
         transcript += event.results[i][0].transcript;
       }
@@ -577,11 +702,17 @@ function createSpeechRecognition() {
 
     transcript = transcript.trim();
 
-    if (transcript && voiceMode && !isSpeaking && !isProcessing) {
+    if (
+      transcript &&
+      voiceMode &&
+      !isSpeaking &&
+      !isProcessing
+    ) {
+      isProcessing = true;
       stopRecognition();
+
       messageInput.value = transcript;
 
-      // Mark this message as voice input so SENTINEL can speak its reply.
       sendMessage("voice");
     }
   };
@@ -589,10 +720,14 @@ function createSpeechRecognition() {
   recognition.onerror = event => {
     console.warn("Voice recognition error:", event.error);
 
-    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+    if (
+      event.error === "not-allowed" ||
+      event.error === "service-not-allowed"
+    ) {
       stopVoiceMode();
       setVoiceStatus("MICROPHONE PERMISSION DENIED");
-      chatStatus.textContent = "ALLOW MICROPHONE ACCESS IN YOUR BROWSER";
+      chatStatus.textContent =
+        "ALLOW MICROPHONE ACCESS IN YOUR BROWSER";
       return;
     }
 
@@ -600,28 +735,47 @@ function createSpeechRecognition() {
       setVoiceStatus("MICROPHONE NOT FOUND");
     } else if (event.error === "network") {
       setVoiceStatus("SPEECH SERVICE CONNECTION ERROR");
+    } else if (event.error === "no-speech") {
+      setVoiceStatus("LISTENING — SPEAK NATURALLY", "listening");
     }
   };
 
   recognition.onend = () => {
     recognitionActive = false;
 
-    if (voiceMode && !isSpeaking && !isProcessing) {
+    if (
+      voiceMode &&
+      !isSpeaking &&
+      !isProcessing
+    ) {
       clearTimeout(recognitionRestartTimer);
+
       recognitionRestartTimer = setTimeout(() => {
         startRecognition();
-      }, 350);
+      }, 400);
     }
   };
 }
 
 function startRecognition() {
-  if (!voiceMode || isSpeaking || isProcessing || !recognition || recognitionActive) return;
+  if (
+    !voiceMode ||
+    isSpeaking ||
+    isProcessing ||
+    !recognition ||
+    recognitionActive
+  ) {
+    return;
+  }
 
   try {
     recognition.start();
+
   } catch (error) {
-    console.warn("Could not start recognition yet:", error.message);
+    console.warn(
+      "Could not start recognition:",
+      error.message
+    );
   }
 }
 
@@ -632,29 +786,48 @@ function stopRecognition() {
   if (recognition && recognitionActive) {
     try {
       recognition.stop();
+
     } catch (error) {
-      console.warn("Could not stop recognition:", error.message);
+      console.warn(
+        "Could not stop recognition:",
+        error.message
+      );
     }
   }
 
   recognitionActive = false;
 }
 
+
+// ============================================
+// VOICE MODE
+// ============================================
+
 function startVoiceMode() {
   if (voiceMode) return;
 
   try {
     if (!("speechSynthesis" in window)) {
-      throw new Error("Speech output is not supported in this browser.");
+      throw new Error(
+        "Speech output is not supported in this browser."
+      );
     }
 
-    if (!recognition) createSpeechRecognition();
+    if (!recognition) {
+      createSpeechRecognition();
+    }
+
+    refreshVoices();
 
     voiceMode = true;
+
     voiceButton.textContent = "STOP VOICE";
     interruptButton.disabled = true;
+
     chatStatus.textContent = "VOICE CONVERSATION ACTIVE";
+
     setVoiceStatus("STARTING MICROPHONE...");
+
     startRecognition();
 
   } catch (error) {
@@ -667,58 +840,111 @@ function stopVoiceMode() {
   voiceMode = false;
   isSpeaking = false;
   isProcessing = false;
+
+  speechSequence++;
+
   stopRecognition();
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
 
+  currentUtterance = null;
+
   voiceButton.textContent = "START VOICE MODE";
   interruptButton.disabled = true;
+
   setVoiceStatus("VOICE MODE OFF");
   chatStatus.textContent = "CONNECTED TO CLOUD AI";
 }
 
+
+// ============================================
+// NATURAL SPEECH OUTPUT
+// ============================================
+
+function getSpeechSettings(text) {
+  const trimmed = String(text || "").trim();
+  const isQuestion = /\?\s*$/.test(trimmed);
+
+  return {
+    rate: 0.96,
+    pitch: isQuestion ? 0.96 : 0.88,
+    volume: 1
+  };
+}
+
 function speakResponse(text) {
   return new Promise(resolve => {
-    if (!voiceMode || !("speechSynthesis" in window)) {
+    if (
+      !voiceMode ||
+      !("speechSynthesis" in window)
+    ) {
       resolve();
       return;
     }
 
+    const sequence = ++speechSequence;
+
     isSpeaking = true;
     isProcessing = true;
+
     stopRecognition();
+
     window.speechSynthesis.cancel();
 
+    // Allow the browser to finish cancelling earlier speech.
     const utterance = new SpeechSynthesisUtterance(
       String(text || "I'm sorry, I didn't receive a response.")
     );
 
+    currentUtterance = utterance;
+
     utterance.lang = "en-AU";
-    utterance.rate = 1.02;
-    utterance.pitch = 0.95;
-    utterance.volume = 1;
 
-    const voices = window.speechSynthesis.getVoices();
-    const australianVoice = voices.find(voice =>
-      voice.lang && voice.lang.toLowerCase().startsWith("en-au")
-    );
+    const settings = getSpeechSettings(text);
 
-    if (australianVoice) utterance.voice = australianVoice;
+    utterance.rate = settings.rate;
+    utterance.pitch = settings.pitch;
+    utterance.volume = settings.volume;
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
 
     interruptButton.disabled = false;
-    setVoiceStatus("SENTINEL IS SPEAKING...", "speaking");
+
+    setVoiceStatus(
+      "SENTINEL IS SPEAKING...",
+      "speaking"
+    );
+
     chatStatus.textContent = "SENTINEL RESPONDING";
 
+    let finished = false;
+
     const finishSpeaking = () => {
+      if (finished) return;
+      finished = true;
+
+      if (sequence !== speechSequence) {
+        resolve();
+        return;
+      }
+
       isSpeaking = false;
       isProcessing = false;
+      currentUtterance = null;
+
       interruptButton.disabled = true;
+
       resolve();
 
       if (voiceMode) {
-        setVoiceStatus("RETURNING TO LISTENING...");
+        setVoiceStatus(
+          "RETURNING TO LISTENING..."
+        );
+
         startRecognition();
       }
     };
@@ -726,32 +952,73 @@ function speakResponse(text) {
     utterance.onend = finishSpeaking;
     utterance.onerror = finishSpeaking;
 
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+      console.error("Speech output failed:", error);
+      finishSpeaking();
+    }
   });
 }
+
+
+// ============================================
+// INTERRUPT
+// ============================================
 
 function interruptSpeech() {
   if (!voiceMode || !isSpeaking) return;
 
+  speechSequence++;
+
   window.speechSynthesis.cancel();
+
+  currentUtterance = null;
+
   isSpeaking = false;
   isProcessing = false;
+
   interruptButton.disabled = true;
-  setVoiceStatus("INTERRUPTED — LISTENING", "listening");
+
+  setVoiceStatus(
+    "INTERRUPTED — LISTENING",
+    "listening"
+  );
+
   startRecognition();
 }
 
+
+// ============================================
+// CHAT MESSAGING
+// ============================================
+
 /*
   MESSAGE SOURCE:
-  "keyboard" = display response only
-  "voice" = display response and speak it
 
-  This keeps keyboard messages silent even when voice mode is active.
+  keyboard = display response only
+  voice = display response and speak it
+
+  Keyboard messages remain silent even when
+  voice mode is active.
 */
+
 async function sendMessage(source = "keyboard") {
   const message = messageInput.value.trim();
 
-  if (!message || !accessCode || sendButton.disabled) return;
+  if (
+    !message ||
+    !accessCode ||
+    sendButton.disabled
+  ) {
+    if (voiceMode) {
+      isProcessing = false;
+      startRecognition();
+    }
+
+    return;
+  }
 
   if (voiceMode) {
     isProcessing = true;
@@ -759,14 +1026,18 @@ async function sendMessage(source = "keyboard") {
   }
 
   addMessage(message, "user");
+
   messageInput.value = "";
 
   sendButton.disabled = true;
+
   chatStatus.textContent = "SENTINEL IS THINKING...";
 
   const loading = document.createElement("div");
+
   loading.className = "message sentinel";
   loading.textContent = "Processing request...";
+
   messages.appendChild(loading);
   messages.scrollTop = messages.scrollHeight;
 
@@ -780,26 +1051,41 @@ async function sendMessage(source = "keyboard") {
     loading.remove();
 
     addMessage(data.reply, "sentinel");
+
     chatStatus.textContent = "CONNECTED TO CLOUD AI";
 
-    // Only actual voice-recognised messages receive spoken replies.
     if (source === "voice" && voiceMode) {
       await speakResponse(data.reply);
+
     } else if (voiceMode) {
-      // Keyboard reply stays silent. Resume listening afterwards.
       isProcessing = false;
-      setVoiceStatus("LISTENING AGAIN...", "listening");
+
+      setVoiceStatus(
+        "LISTENING AGAIN...",
+        "listening"
+      );
+
       startRecognition();
     }
 
   } catch (error) {
     loading.remove();
-    addMessage("Connection error: " + error.message, "sentinel");
+
+    addMessage(
+      "Connection error: " + error.message,
+      "sentinel"
+    );
+
     chatStatus.textContent = "CONNECTION ERROR";
 
     if (voiceMode) {
       isProcessing = false;
-      setVoiceStatus("LISTENING AGAIN...", "listening");
+
+      setVoiceStatus(
+        "LISTENING AGAIN...",
+        "listening"
+      );
+
       startRecognition();
     }
 
@@ -807,6 +1093,11 @@ async function sendMessage(source = "keyboard") {
     sendButton.disabled = false;
   }
 }
+
+
+// ============================================
+// EMAIL BRIEFING
+// ============================================
 
 async function loadLatestBriefing() {
   if (!accessCode) return;
@@ -835,34 +1126,53 @@ async function loadLatestBriefing() {
     }
 
   } catch (error) {
-    console.warn("Could not retrieve the latest briefing:", error);
+    console.warn(
+      "Could not retrieve the latest briefing:",
+      error
+    );
   }
 }
 
+
+// ============================================
+// FIREBASE NOTIFICATIONS
+// ============================================
+
 async function enableNotifications() {
   if (!accessCode) {
-    notificationStatus.textContent = "CONNECT TO SENTINEL FIRST";
+    notificationStatus.textContent =
+      "CONNECT TO SENTINEL FIRST";
     return;
   }
 
   if (!firebaseReady) {
-    notificationStatus.textContent = "FIREBASE COULD NOT INITIALISE";
+    notificationStatus.textContent =
+      "FIREBASE COULD NOT INITIALISE";
     return;
   }
 
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-    notificationStatus.textContent = "NOTIFICATIONS NOT SUPPORTED";
+  if (
+    !("Notification" in window) ||
+    !("serviceWorker" in navigator)
+  ) {
+    notificationStatus.textContent =
+      "NOTIFICATIONS NOT SUPPORTED";
     return;
   }
 
   notificationButton.disabled = true;
-  notificationStatus.textContent = "SETTING UP NOTIFICATIONS...";
+
+  notificationStatus.textContent =
+    "SETTING UP NOTIFICATIONS...";
 
   try {
-    const permission = await Notification.requestPermission();
+    const permission =
+      await Notification.requestPermission();
 
     if (permission !== "granted") {
-      throw new Error("Notification permission was not granted.");
+      throw new Error(
+        "Notification permission was not granted."
+      );
     }
 
     serviceWorkerRegistration =
@@ -872,11 +1182,14 @@ async function enableNotifications() {
 
     const token = await messaging.getToken({
       vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: serviceWorkerRegistration
+      serviceWorkerRegistration:
+        serviceWorkerRegistration
     });
 
     if (!token) {
-      throw new Error("Firebase did not return a device token.");
+      throw new Error(
+        "Firebase did not return a device token."
+      );
     }
 
     const result = await apiRequest({
@@ -886,44 +1199,74 @@ async function enableNotifications() {
     });
 
     if (result.success === false) {
-      throw new Error(result.error || "The server could not save the device.");
+      throw new Error(
+        result.error ||
+        "The server could not save the device."
+      );
     }
 
-    localStorage.setItem("sentinelFcmToken", token);
+    localStorage.setItem(
+      "sentinelFcmToken",
+      token
+    );
 
-    notificationStatus.textContent = "DEVICE REGISTERED — NOTIFICATIONS READY";
-    notificationButton.textContent = "NOTIFICATIONS ENABLED";
+    notificationStatus.textContent =
+      "DEVICE REGISTERED — NOTIFICATIONS READY";
+
+    notificationButton.textContent =
+      "NOTIFICATIONS ENABLED";
 
   } catch (error) {
-    console.error("Notification setup error:", error);
-    notificationStatus.textContent = error.message;
+    console.error(
+      "Notification setup error:",
+      error
+    );
+
+    notificationStatus.textContent =
+      error.message;
+
     notificationButton.disabled = false;
   }
 }
 
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
 document.getElementById("connectButton")
   .addEventListener("click", connect);
 
-// Keyboard sends are explicitly marked as keyboard messages.
-sendButton.addEventListener("click", () => sendMessage("keyboard"));
+sendButton.addEventListener("click", () => {
+  sendMessage("keyboard");
+});
 
 textToggleButton.addEventListener("click", () => {
-  const isHidden = inputArea.classList.contains("hidden");
+  const isHidden =
+    inputArea.classList.contains("hidden");
 
   if (isHidden) {
     inputArea.classList.remove("hidden");
-    textToggleButton.textContent = "CLOSE TEXT INPUT";
 
-    // Focus only happens after the user manually opens text input.
+    textToggleButton.textContent =
+      "CLOSE TEXT INPUT";
+
     messageInput.focus();
+
   } else {
     inputArea.classList.add("hidden");
-    textToggleButton.textContent = "OPEN TEXT INPUT";
+
+    textToggleButton.textContent =
+      "OPEN TEXT INPUT";
+
     messageInput.blur();
   }
 });
 
-notificationButton.addEventListener("click", enableNotifications);
+notificationButton.addEventListener(
+  "click",
+  enableNotifications
+);
 
 voiceButton.addEventListener("click", () => {
   if (voiceMode) {
@@ -933,14 +1276,18 @@ voiceButton.addEventListener("click", () => {
   }
 });
 
-interruptButton.addEventListener("click", interruptSpeech);
+interruptButton.addEventListener(
+  "click",
+  interruptSpeech
+);
 
 document.getElementById("accessCode")
   .addEventListener("keydown", event => {
-    if (event.key === "Enter") connect();
+    if (event.key === "Enter") {
+      connect();
+    }
   });
 
-// Pressing Enter also sends a keyboard message, never a spoken one.
 messageInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -948,23 +1295,41 @@ messageInput.addEventListener("keydown", event => {
   }
 });
 
-const savedCode = sessionStorage.getItem("sentinelAccessCode");
+
+// ============================================
+// SESSION RESTORATION
+// ============================================
+
+const savedCode =
+  sessionStorage.getItem("sentinelAccessCode");
 
 if (savedCode) {
-  document.getElementById("accessCode").value = savedCode;
+  document.getElementById("accessCode").value =
+    savedCode;
+
   connect();
 }
+
+
+// ============================================
+// SERVICE WORKER
+// ============================================
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
       serviceWorkerRegistration =
         await navigator.serviceWorker.register("./sw.js");
+
     } catch (error) {
-      console.log("Offline support unavailable:", error);
+      console.log(
+        "Offline support unavailable:",
+        error
+      );
     }
   });
 }
+
 </script>
 
 </body>
