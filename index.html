@@ -186,7 +186,7 @@ button:disabled {
   margin: 15px auto;
 }
 
-.access input {
+.access input:not([type="checkbox"]) {
   width: 100%;
   margin: 8px 0 12px;
 }
@@ -194,6 +194,26 @@ button:disabled {
 .access button {
   width: 100%;
   padding: 14px;
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 15px;
+  color: #b8d2e4;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-row input {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--cyan);
+  cursor: pointer;
 }
 
 .hidden { display: none !important; }
@@ -321,8 +341,15 @@ footer {
   <section id="accessPanel" class="panel access">
     <div class="panel-title">AUTHENTICATION REQUIRED</div>
     <p>Enter your private SENTINEL access code.</p>
+
     <input id="accessCode" type="password"
       placeholder="Access code" autocomplete="off">
+
+    <label class="remember-row">
+      <input id="rememberDevice" type="checkbox" checked>
+      <span>REMEMBER THIS DEVICE</span>
+    </label>
+
     <button id="connectButton">CONNECT</button>
     <p id="accessStatus" class="subtitle"></p>
   </section>
@@ -362,7 +389,7 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.8.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v1.9.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -417,6 +444,9 @@ const chatPanel = document.getElementById("chatPanel");
 const accessStatus = document.getElementById("accessStatus");
 const chatStatus = document.getElementById("chatStatus");
 
+const accessInput = document.getElementById("accessCode");
+const rememberDevice = document.getElementById("rememberDevice");
+
 const messageInput = document.getElementById("messageInput");
 const messages = document.getElementById("messages");
 const sendButton = document.getElementById("sendButton");
@@ -430,6 +460,41 @@ const voiceStatus = document.getElementById("voiceStatus");
 
 const textToggleButton = document.getElementById("textToggleButton");
 const inputArea = document.getElementById("inputArea");
+
+
+// ============================================
+// REMEMBER THIS DEVICE
+// ============================================
+
+function saveLoginCode(code) {
+  if (rememberDevice.checked) {
+    localStorage.setItem("sentinelAccessCode", code);
+    sessionStorage.removeItem("sentinelAccessCode");
+  } else {
+    localStorage.removeItem("sentinelAccessCode");
+    sessionStorage.setItem("sentinelAccessCode", code);
+  }
+}
+
+function getSavedLoginCode() {
+  const permanentCode =
+    localStorage.getItem("sentinelAccessCode");
+
+  if (permanentCode) {
+    rememberDevice.checked = true;
+    return permanentCode;
+  }
+
+  const sessionCode =
+    sessionStorage.getItem("sentinelAccessCode");
+
+  if (sessionCode) {
+    rememberDevice.checked = false;
+    return sessionCode;
+  }
+
+  return "";
+}
 
 
 // ============================================
@@ -488,7 +553,7 @@ async function apiRequest(payload) {
 // ============================================
 
 async function connect() {
-  const code = document.getElementById("accessCode").value.trim();
+  const code = accessInput.value.trim();
 
   if (!code) {
     accessStatus.textContent = "Please enter your access code.";
@@ -507,7 +572,8 @@ async function connect() {
     });
 
     accessCode = code;
-    sessionStorage.setItem("sentinelAccessCode", code);
+
+    saveLoginCode(code);
 
     accessPanel.classList.add("hidden");
     chatPanel.classList.remove("hidden");
@@ -536,17 +602,6 @@ async function connect() {
 // VOICE SELECTION
 // ============================================
 
-/*
-  Browser voice metadata is inconsistent.
-  Most browsers do not expose a reliable gender field.
-
-  This selector:
-  1. Prefers Australian English.
-  2. Prefers voices whose names suggest a masculine voice.
-  3. Falls back to other English voices.
-  4. Finally uses the browser's default voice.
-*/
-
 function scoreVoice(voice) {
   const name = String(voice.name || "").toLowerCase();
   const lang = String(voice.lang || "").toLowerCase();
@@ -562,28 +617,13 @@ function scoreVoice(voice) {
   else score -= 100;
 
   const masculineClues = [
-    "male",
-    "daniel",
-    "oliver",
-    "arthur",
-    "george",
-    "james",
-    "thomas",
-    "david",
-    "alex",
-    "ryan",
-    "guy"
+    "male", "daniel", "oliver", "arthur", "george",
+    "james", "thomas", "david", "alex", "ryan", "guy"
   ];
 
   const feminineClues = [
-    "female",
-    "samantha",
-    "victoria",
-    "karen",
-    "moira",
-    "tessa",
-    "serena",
-    "zira"
+    "female", "samantha", "victoria", "karen", "moira",
+    "tessa", "serena", "zira"
   ];
 
   if (masculineClues.some(word => name.includes(word))) {
@@ -680,10 +720,7 @@ function createSpeechRecognition() {
     recognitionActive = true;
 
     if (voiceMode && !isSpeaking && !isProcessing) {
-      setVoiceStatus(
-        "LISTENING — SPEAK NATURALLY",
-        "listening"
-      );
+      setVoiceStatus("LISTENING — SPEAK NATURALLY", "listening");
     }
   };
 
@@ -772,10 +809,7 @@ function startRecognition() {
     recognition.start();
 
   } catch (error) {
-    console.warn(
-      "Could not start recognition:",
-      error.message
-    );
+    console.warn("Could not start recognition:", error.message);
   }
 }
 
@@ -788,10 +822,7 @@ function stopRecognition() {
       recognition.stop();
 
     } catch (error) {
-      console.warn(
-        "Could not stop recognition:",
-        error.message
-      );
+      console.warn("Could not stop recognition:", error.message);
     }
   }
 
@@ -893,7 +924,6 @@ function speakResponse(text) {
 
     window.speechSynthesis.cancel();
 
-    // Allow the browser to finish cancelling earlier speech.
     const utterance = new SpeechSynthesisUtterance(
       String(text || "I'm sorry, I didn't receive a response.")
     );
@@ -914,11 +944,7 @@ function speakResponse(text) {
 
     interruptButton.disabled = false;
 
-    setVoiceStatus(
-      "SENTINEL IS SPEAKING...",
-      "speaking"
-    );
-
+    setVoiceStatus("SENTINEL IS SPEAKING...", "speaking");
     chatStatus.textContent = "SENTINEL RESPONDING";
 
     let finished = false;
@@ -941,10 +967,7 @@ function speakResponse(text) {
       resolve();
 
       if (voiceMode) {
-        setVoiceStatus(
-          "RETURNING TO LISTENING..."
-        );
-
+        setVoiceStatus("RETURNING TO LISTENING...");
         startRecognition();
       }
     };
@@ -981,10 +1004,7 @@ function interruptSpeech() {
 
   interruptButton.disabled = true;
 
-  setVoiceStatus(
-    "INTERRUPTED — LISTENING",
-    "listening"
-  );
+  setVoiceStatus("INTERRUPTED — LISTENING", "listening");
 
   startRecognition();
 }
@@ -993,16 +1013,6 @@ function interruptSpeech() {
 // ============================================
 // CHAT MESSAGING
 // ============================================
-
-/*
-  MESSAGE SOURCE:
-
-  keyboard = display response only
-  voice = display response and speak it
-
-  Keyboard messages remain silent even when
-  voice mode is active.
-*/
 
 async function sendMessage(source = "keyboard") {
   const message = messageInput.value.trim();
@@ -1060,10 +1070,7 @@ async function sendMessage(source = "keyboard") {
     } else if (voiceMode) {
       isProcessing = false;
 
-      setVoiceStatus(
-        "LISTENING AGAIN...",
-        "listening"
-      );
+      setVoiceStatus("LISTENING AGAIN...", "listening");
 
       startRecognition();
     }
@@ -1071,20 +1078,14 @@ async function sendMessage(source = "keyboard") {
   } catch (error) {
     loading.remove();
 
-    addMessage(
-      "Connection error: " + error.message,
-      "sentinel"
-    );
+    addMessage("Connection error: " + error.message, "sentinel");
 
     chatStatus.textContent = "CONNECTION ERROR";
 
     if (voiceMode) {
       isProcessing = false;
 
-      setVoiceStatus(
-        "LISTENING AGAIN...",
-        "listening"
-      );
+      setVoiceStatus("LISTENING AGAIN...", "listening");
 
       startRecognition();
     }
@@ -1126,10 +1127,7 @@ async function loadLatestBriefing() {
     }
 
   } catch (error) {
-    console.warn(
-      "Could not retrieve the latest briefing:",
-      error
-    );
+    console.warn("Could not retrieve the latest briefing:", error);
   }
 }
 
@@ -1140,14 +1138,12 @@ async function loadLatestBriefing() {
 
 async function enableNotifications() {
   if (!accessCode) {
-    notificationStatus.textContent =
-      "CONNECT TO SENTINEL FIRST";
+    notificationStatus.textContent = "CONNECT TO SENTINEL FIRST";
     return;
   }
 
   if (!firebaseReady) {
-    notificationStatus.textContent =
-      "FIREBASE COULD NOT INITIALISE";
+    notificationStatus.textContent = "FIREBASE COULD NOT INITIALISE";
     return;
   }
 
@@ -1155,24 +1151,18 @@ async function enableNotifications() {
     !("Notification" in window) ||
     !("serviceWorker" in navigator)
   ) {
-    notificationStatus.textContent =
-      "NOTIFICATIONS NOT SUPPORTED";
+    notificationStatus.textContent = "NOTIFICATIONS NOT SUPPORTED";
     return;
   }
 
   notificationButton.disabled = true;
-
-  notificationStatus.textContent =
-    "SETTING UP NOTIFICATIONS...";
+  notificationStatus.textContent = "SETTING UP NOTIFICATIONS...";
 
   try {
-    const permission =
-      await Notification.requestPermission();
+    const permission = await Notification.requestPermission();
 
     if (permission !== "granted") {
-      throw new Error(
-        "Notification permission was not granted."
-      );
+      throw new Error("Notification permission was not granted.");
     }
 
     serviceWorkerRegistration =
@@ -1182,14 +1172,11 @@ async function enableNotifications() {
 
     const token = await messaging.getToken({
       vapidKey: VAPID_KEY,
-      serviceWorkerRegistration:
-        serviceWorkerRegistration
+      serviceWorkerRegistration: serviceWorkerRegistration
     });
 
     if (!token) {
-      throw new Error(
-        "Firebase did not return a device token."
-      );
+      throw new Error("Firebase did not return a device token.");
     }
 
     const result = await apiRequest({
@@ -1200,30 +1187,21 @@ async function enableNotifications() {
 
     if (result.success === false) {
       throw new Error(
-        result.error ||
-        "The server could not save the device."
+        result.error || "The server could not save the device."
       );
     }
 
-    localStorage.setItem(
-      "sentinelFcmToken",
-      token
-    );
+    localStorage.setItem("sentinelFcmToken", token);
 
     notificationStatus.textContent =
       "DEVICE REGISTERED — NOTIFICATIONS READY";
 
-    notificationButton.textContent =
-      "NOTIFICATIONS ENABLED";
+    notificationButton.textContent = "NOTIFICATIONS ENABLED";
 
   } catch (error) {
-    console.error(
-      "Notification setup error:",
-      error
-    );
+    console.error("Notification setup error:", error);
 
-    notificationStatus.textContent =
-      error.message;
+    notificationStatus.textContent = error.message;
 
     notificationButton.disabled = false;
   }
@@ -1242,31 +1220,21 @@ sendButton.addEventListener("click", () => {
 });
 
 textToggleButton.addEventListener("click", () => {
-  const isHidden =
-    inputArea.classList.contains("hidden");
+  const isHidden = inputArea.classList.contains("hidden");
 
   if (isHidden) {
     inputArea.classList.remove("hidden");
-
-    textToggleButton.textContent =
-      "CLOSE TEXT INPUT";
-
+    textToggleButton.textContent = "CLOSE TEXT INPUT";
     messageInput.focus();
 
   } else {
     inputArea.classList.add("hidden");
-
-    textToggleButton.textContent =
-      "OPEN TEXT INPUT";
-
+    textToggleButton.textContent = "OPEN TEXT INPUT";
     messageInput.blur();
   }
 });
 
-notificationButton.addEventListener(
-  "click",
-  enableNotifications
-);
+notificationButton.addEventListener("click", enableNotifications);
 
 voiceButton.addEventListener("click", () => {
   if (voiceMode) {
@@ -1276,10 +1244,7 @@ voiceButton.addEventListener("click", () => {
   }
 });
 
-interruptButton.addEventListener(
-  "click",
-  interruptSpeech
-);
+interruptButton.addEventListener("click", interruptSpeech);
 
 document.getElementById("accessCode")
   .addEventListener("keydown", event => {
@@ -1300,13 +1265,10 @@ messageInput.addEventListener("keydown", event => {
 // SESSION RESTORATION
 // ============================================
 
-const savedCode =
-  sessionStorage.getItem("sentinelAccessCode");
+const savedCode = getSavedLoginCode();
 
 if (savedCode) {
-  document.getElementById("accessCode").value =
-    savedCode;
-
+  accessInput.value = savedCode;
   connect();
 }
 
@@ -1322,10 +1284,7 @@ if ("serviceWorker" in navigator) {
         await navigator.serviceWorker.register("./sw.js");
 
     } catch (error) {
-      console.log(
-        "Offline support unavailable:",
-        error
-      );
+      console.log("Offline support unavailable:", error);
     }
   });
 }
