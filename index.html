@@ -389,7 +389,7 @@ footer {
 </main>
 
 <footer>
-  SENTINEL v1.9.0 · PERSONAL INTELLIGENCE SYSTEM
+  SENTINEL v2.0.0 · PERSONAL INTELLIGENCE SYSTEM
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -549,6 +549,58 @@ async function apiRequest(payload) {
 
 
 // ============================================
+// BACKGROUND RESPONSE NOTIFICATIONS
+// ============================================
+
+async function notifyResponseReady() {
+  // Only notify when SENTINEL is not the active window.
+  const isAway =
+    document.visibilityState !== "visible" ||
+    !document.hasFocus();
+
+  if (!isAway) return;
+
+  if (
+    !("Notification" in window) ||
+    Notification.permission !== "granted"
+  ) {
+    return;
+  }
+
+  try {
+    let registration = serviceWorkerRegistration;
+
+    if (!registration && "serviceWorker" in navigator) {
+      registration = await navigator.serviceWorker.ready;
+      serviceWorkerRegistration = registration;
+    }
+
+    if (registration && registration.showNotification) {
+      await registration.showNotification(
+        "SENTINEL — RESPONSE READY",
+        {
+          body: "Your response is ready. Open SENTINEL to read it.",
+          icon: "./icon.svg",
+          badge: "./icon.svg",
+          tag: "sentinel-response-" + Date.now(),
+          renotify: true
+        }
+      );
+
+    } else {
+      new Notification("SENTINEL — RESPONSE READY", {
+        body: "Your response is ready. Open SENTINEL to read it.",
+        icon: "./icon.svg"
+      });
+    }
+
+  } catch (error) {
+    console.warn("Could not show response notification:", error);
+  }
+}
+
+
+// ============================================
 // CONNECTION
 // ============================================
 
@@ -580,7 +632,7 @@ async function connect() {
 
     addMessage(data.reply, "sentinel");
 
-    await loadLatestBriefing();
+    // Email briefing is deliberately NOT loaded automatically.
 
     const savedToken = localStorage.getItem("sentinelFcmToken");
 
@@ -1064,6 +1116,9 @@ async function sendMessage(source = "keyboard") {
 
     chatStatus.textContent = "CONNECTED TO CLOUD AI";
 
+    // Notify if the app is minimised, hidden or unfocused.
+    await notifyResponseReady();
+
     if (source === "voice" && voiceMode) {
       await speakResponse(data.reply);
 
@@ -1078,9 +1133,13 @@ async function sendMessage(source = "keyboard") {
   } catch (error) {
     loading.remove();
 
-    addMessage("Connection error: " + error.message, "sentinel");
+    const errorMessage = "Connection error: " + error.message;
+
+    addMessage(errorMessage, "sentinel");
 
     chatStatus.textContent = "CONNECTION ERROR";
+
+    await notifyResponseReady();
 
     if (voiceMode) {
       isProcessing = false;
@@ -1099,6 +1158,9 @@ async function sendMessage(source = "keyboard") {
 // ============================================
 // EMAIL BRIEFING
 // ============================================
+
+// Kept available for future manual email briefing controls.
+// It is no longer called automatically when SENTINEL connects.
 
 async function loadLatestBriefing() {
   if (!accessCode) return;
